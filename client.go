@@ -53,12 +53,13 @@ func main() {
   var reply Item
   var db []Item
 
-  Leader_address:="localhost"+Leader_address_portNo
-  Leader_address1:= strings.TrimSpace(string(Leader_address))
+  Leader_address1:="localhost"+Leader_address_portNo
+
+  Leader_address:= strings.TrimSpace(string(Leader_address1))
 
   fmt.Println(Leader_address1)
 
-  client, err := rpc.DialHTTP("tcp", Leader_address1)
+  client, err := rpc.DialHTTP("tcp", Leader_address)
 
   if err != nil {
     log.Fatal("Connection error: ", err)
