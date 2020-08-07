@@ -12,6 +12,7 @@ type Nodes struct{
   Id string
   PortNo string
   isLeader bool
+
 }
 
 var List_of_Nodes []Nodes
@@ -58,6 +59,7 @@ func main() {
 
     // output message received
     fmt.Print("Message Received:", string(message))
+    
     if strings.TrimSpace(string(message)) == "STOP" {
     	break
     }

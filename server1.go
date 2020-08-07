@@ -3,14 +3,13 @@ package main
 import(
 	"fmt"
 	"net"
-	//"bufio"
 	"os"
-	//"strings"
-  //"net"
-  "net/http"
-  "net/rpc"
-  "log"
+  	"net/http"
+  	"net/rpc"
+  	"log"
 )
+
+var DEBUG bool=true
 
 type Item struct {
   Key string
@@ -41,9 +40,10 @@ func (a *API) Get(title string, reply *Item) error {
 }
 
 func (a *API) Set(item Item, reply *Item) error {
-  database = append(database, item)
-  *reply = item
-  return nil
+	  database = append(database, item)
+	  *reply = item
+	  return nil
+
 }
 
 func (a *API) Edit(item Item, reply *Item) error {
@@ -60,6 +60,7 @@ func (a *API) Edit(item Item, reply *Item) error {
   return nil
 }
 
+
 func (a *API) Del(item Item, reply *Item) error {
   var del Item
 
@@ -75,15 +76,19 @@ func (a *API) Del(item Item, reply *Item) error {
   return nil
 }
 
+
+
 func main() {
 
 
-  fmt.Println("Leader Started......")
+  fmt.Println("server1 Started......")
 
   // listen on all interfaces
   portNo:= ":"+os.Args[1]
   api := new(API)
+
   err := rpc.Register(api)
+
   if err != nil {
     log.Fatal("error registering API", err)
   }
@@ -95,7 +100,11 @@ func main() {
   if err != nil {
     log.Fatal("Listener error", err)
   }
-  log.Printf("serving rpc on port %v ", portNo)
+  
+  if DEBUG{
+  	 log.Printf("serving rpc on port %v ", portNo)
+  }
+ 
 
   http.Serve(listener, nil)
 

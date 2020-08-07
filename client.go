@@ -15,19 +15,20 @@ type Item struct {
   Value  string
 }
 
+var DEBUG bool=true
 
 func main() {
 
   /********************************************* Simple client code ****************************************************/
   
   gateway_ip:= os.Args[1]
-  gateway_portNo:=os.Args[2]
+  gateway_portNo:= os.Args[2]
   
   gatewayAddress:= gateway_ip+":"+gateway_portNo
   
   Leader_address_portNo:=""
 
-  //gtting a connection
+  //getting a connection
   connection,_:= net.Dial("tcp",gatewayAddress)
 
   for { 
@@ -43,7 +44,11 @@ func main() {
 
     message, _ := bufio.NewReader(connection).ReadString('\n')
 
-    fmt.Print("Got PORT No of Leader: "+message)
+
+    if DEBUG {
+    	fmt.Print("Got PORT No of Leader: "+message)
+    }
+    
 
     Leader_address_portNo= ":"+message
     break
@@ -57,15 +62,17 @@ func main() {
 
   Leader_address:= strings.TrimSpace(string(Leader_address1))
 
-  fmt.Println(Leader_address1)
-
+  if DEBUG {
+  	fmt.Println("Leader_address client got ",Leader_address1)
+  }
+  
   client, err := rpc.DialHTTP("tcp", Leader_address)
 
   if err != nil {
     log.Fatal("Connection error: ", err)
   }
 
-  a := Item{"Ashwani", "199"}
+  a := Item{"Tyagi", "199"}
   b := Item{"SAP", "1011"}
   c := Item{"Ishan", "110"}
 
