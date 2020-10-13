@@ -14,7 +14,7 @@ Raft Overview
     * All the changes have to gone through the Leader.
     * Leader replicates its log to all other its followers nodes.
 
-![RAFT](Raft.png)
+   ![RAFT](raft.png)
 
 
 
