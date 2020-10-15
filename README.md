@@ -1,11 +1,15 @@
 Raft distributed consensus algorithm.
 ==
 It is the algorithm which used to achieve the **consensus**(to make a decision or to share data) in distributed systems.<br>
-**Consensus** is achieved by Leader Election and Log Replication.
+In this **Distributed Consensus** is achieved with help of Leader Election and Log Replication.
 
 Raft Overview
 ====
-**Initially** All the nodes are in follower state,then time out occurs of one of the node this leads to that node becomes candidate and triggers an election to become Leader.Send Msg RPC to all nodes asking them to vote for him.
+1.  Initially all the nodes are in follower state and each nodes have timer(randomised initialised).
+2.  Then time out occurs of one of the node this leads to that node becomes candidate and triggers an **election** to become **Leader**.
+3.  It vote for himself and Send Request Msg RPC to all nodes asking them to vote for him.
+4.  If it get the majority of vote then it will declare itself as a **Leader** and send Heartbeat msg RPC to all followers nodes to tell them that it becomes the Leader of this Term and reset their Timer.
+4.  Leader have to keep sending the Heartbeat msg (Append Enteries + no logs) to all its followers, so that they will not able to trigger an election.
 
 * 1.**Leader Election:**
     * Select one of the node as the cluster Leader. It is achieved by Leader Election.
