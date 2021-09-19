@@ -136,24 +136,6 @@ var done bool = false
 // 	}
 // }
 
-// func Initialization(no_of_servers int) ([]Raft, error) {
-
-// 	server := make([]Raft, no_of_servers)
-
-// 	for i := 0; i < no_of_servers; i++ {
-// 		server[i].My_id = i + 1
-// 		server[i].CurrentTerm = 0
-// 		server[i].State = Follower
-// 		//server[i].cond = sync.NewCond(&(server[i].mu))
-
-// 		for j := 0; j < no_of_servers; j++ {
-// 			server[i].PeerIDs = append(server[i].PeerIDs, j+1)
-// 		}
-// 	}
-
-// 	return server, nil
-// }
-
 func (r *Raft) GetStatus() int {
 	return http.StatusOK
 }

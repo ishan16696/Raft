@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -16,13 +17,14 @@ const (
 	Leader    state = "Leader"
 
 	defaultServerIP = "127.0.0.1"
+	NotVotedYet     = ""
 )
 
 // ServerConfig defines the field in server which are configurable.
 type ServerConfig struct {
-	ServerPort uint
+	ServerPort int
 	TotalNodes int
-	PeerPorts  []uint
+	PeerPorts  []int
 }
 
 type server struct {
@@ -32,17 +34,18 @@ type server struct {
 	Term         int
 	Nodes        int
 	EndPoint     string
-	Port         uint
-	Peers        []uint
+	Port         int
+	Peers        []int
 }
 
 type Raft struct {
 	Server *server
+	mutex  sync.Locker
 }
 
 type Server interface {
 	GetServerID() string
-	Leader() string
+	LeaderID() string
 
 	Term() uint64
 	CommitIndex() uint64
@@ -83,14 +86,14 @@ func (s *server) QuorumSize() int {
 	return s.Nodes/2 + 1
 }
 
-func getID(port uint) string {
+func getID(port int) string {
 	portInByte := new([]byte)
 	hash := sha256.New()
 	hash.Write(append(*portInByte, byte(port)))
 	return hex.EncodeToString(hash.Sum(*portInByte)[:20])
 }
 
-func getEndPoint(port uint) string {
+func getEndPoint(port int) string {
 	return fmt.Sprintf("http://%s:%d", defaultServerIP, port)
 }
 
@@ -103,7 +106,7 @@ func NewServer(cfg *ServerConfig) *server {
 		ServerID:     getID(cfg.ServerPort),
 		CurrentState: Follower,
 		Term:         0,
-		VotedFor:     "",
+		VotedFor:     NotVotedYet,
 	}
 }
 
