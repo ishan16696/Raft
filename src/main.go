@@ -24,6 +24,7 @@ func main() {
 
 }
 
+// setupSignalHandler returns the context which take care of any os interrupt.
 func setupSignalHandler() context.Context {
 	close(onlyOneSignalHandler) // panics when called twice
 

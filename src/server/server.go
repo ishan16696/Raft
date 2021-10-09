@@ -12,19 +12,20 @@ import (
 type state string
 
 const (
-	Follower  state = "Follower"
-	Candidate state = "Candidate"
-	Leader    state = "Leader"
+	Follower    state = "Follower"
+	Candidate   state = "Candidate"
+	Leader      state = "Leader"
+	UnknownSate state = "Unknown"
 
 	defaultServerIP = "127.0.0.1"
-	NotVotedYet     = ""
+	NotVotedYet     = "NotVoted"
 )
 
-// ServerConfig defines the field in server which are configurable.
+// ServerConfig defines the field in server which are configurable by user.
 type ServerConfig struct {
-	ServerPort int
-	TotalNodes int
-	PeerPorts  []int
+	ServerPort int   `json:"serverPort"`
+	TotalNodes int   `json:"totalNodes"`
+	PeerPorts  []int `json:"peerPort"`
 }
 
 type server struct {
@@ -49,9 +50,9 @@ type Server interface {
 
 	Term() uint64
 	CommitIndex() uint64
-	VotedFor() string
+	LastVotedFor() string
 	MemberCount() int
-	QuorumSize() int
+	Quorum() int
 	IsLogEmpty() bool
 	LastCommandName() string
 	GetState() string
@@ -78,14 +79,15 @@ func (s *server) GetServerID() string {
 	return s.ServerID
 }
 
-func (s *server) Voted() string {
+func (s *server) LastVotedFor() string {
 	return s.VotedFor
 }
 
-func (s *server) QuorumSize() int {
+func (s *server) Quorum() int {
 	return s.Nodes/2 + 1
 }
 
+// getID takes the port no. and returns the hash of it as string.
 func getID(port int) string {
 	portInByte := new([]byte)
 	hash := sha256.New()
@@ -93,6 +95,7 @@ func getID(port int) string {
 	return hex.EncodeToString(hash.Sum(*portInByte)[:20])
 }
 
+// getEndPoint takes input as port no. and returns the endpoint.
 func getEndPoint(port int) string {
 	return fmt.Sprintf("http://%s:%d", defaultServerIP, port)
 }
@@ -107,6 +110,7 @@ func NewServer(cfg *ServerConfig) *server {
 		CurrentState: Follower,
 		Term:         0,
 		VotedFor:     NotVotedYet,
+		Peers:        cfg.PeerPorts,
 	}
 }
 
