@@ -12,28 +12,14 @@ import (
 	"time"
 )
 
+// getRaftServer returns the Raft struct with all configuration.
 func getRaftServer(cfg *server.ServerConfig) *Raft {
 	return &Raft{
-		config: server.NewRaft(cfg),
+		config:         server.NewRaft(cfg),
+		electionTimer:  time.NewTimer(1000 * time.Second),
+		heartbeatTimer: time.NewTimer(1000 * time.Second),
 	}
 }
-
-// func (r *Raft) StartTimer() {
-// 	duration := rand.Int()%40 + 200
-// 	time.Sleep(time.Duration(duration) * time.Millisecond)
-// 	//rf.mu.Lock()
-// 	if taken == 0 {
-// 		taken = 1
-
-// 	}
-// 	//rf.mu.Unlock()
-// 	if done == false {
-// 		taken = 0
-// 		StartTimer(wg, rf)
-// 	}
-// 	wg.Done()
-
-// }
 
 func (r *Raft) GetStatus() int {
 	return r.status
@@ -60,6 +46,22 @@ func IsServerHealthy(serverURL string) (bool, error) {
 	return health.HealthStatus, nil
 }
 
+func (r *Raft) serveHealth(rw http.ResponseWriter, req *http.Request) {
+	rw.WriteHeader(r.GetStatus())
+	healthCheck := &healthCheck{
+		HealthStatus: func() bool {
+			return r.GetStatus() == http.StatusOK
+		}(),
+	}
+	json, err := json.Marshal(healthCheck)
+	if err != nil {
+		log.Printf("Unable to marshal health status to json: %v", err)
+		return
+	}
+	rw.Write([]byte(json))
+}
+
+// RequestForVote sends a "POST" request for asking vote.
 func (r *Raft) RequestForVote(serverURL string) (RequestVoteReply, error) {
 	var reply RequestVoteReply
 	reqVote := RequestVote{
@@ -90,21 +92,6 @@ func (r *Raft) RequestForVote(serverURL string) (RequestVoteReply, error) {
 	return reply, nil
 }
 
-func (r *Raft) serveHealth(rw http.ResponseWriter, req *http.Request) {
-	rw.WriteHeader(r.GetStatus())
-	healthCheck := &healthCheck{
-		HealthStatus: func() bool {
-			return r.GetStatus() == http.StatusOK
-		}(),
-	}
-	json, err := json.Marshal(healthCheck)
-	if err != nil {
-		log.Printf("Unable to marshal health status to json: %v", err)
-		return
-	}
-	rw.Write([]byte(json))
-}
-
 func (r *Raft) sendRequestVote(rw http.ResponseWriter, req *http.Request) {
 	var reqComing RequestVote
 	if req.Method != "POST" {
@@ -130,14 +117,56 @@ func (r *Raft) sendRequestVote(rw http.ResponseWriter, req *http.Request) {
 		}(),
 		VoteGranted: func() bool {
 			if r.config.Server.Term < reqComing.Term {
-				r.config.Server.Term = reqComing.Term
+				r.config.Server.SetTerm(reqComing.Term)
+				r.config.Server.SetState(server.Follower)
 				return true
 			}
 			return false
 		}(),
 	}
 
+	if reqVoteReply.VoteGranted {
+		r.ResetElectionTimer()
+	}
 	json, err := json.Marshal(reqVoteReply)
+	if err != nil {
+		log.Printf("Unable to marshal health status to json: %v", err)
+		return
+	}
+	rw.Write([]byte(json))
+}
+
+func (r *Raft) serveHeartbeatPluslog(rw http.ResponseWriter, req *http.Request) {
+	var reqComing Heartbeat
+	if req.Method != "POST" {
+		return
+	}
+
+	reqBody, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := json.Unmarshal(reqBody, &reqComing); err != nil {
+		log.Printf("Unable to unmarshal request into json: %v", err)
+		return
+	}
+
+	r.ResetElectionTimer()
+	heartbeatReply := &HeartbeatReply{
+		IsResetTimer: true,
+		AckForLog:    false,
+	}
+
+	if reqComing.ContainLogs {
+		fmt.Println("take action like write ahead logs")
+	}
+
+	if r.config.Server.GetTerm() < reqComing.Term {
+		r.config.Server.SetTerm(reqComing.Term)
+	}
+
+	json, err := json.Marshal(heartbeatReply)
 	if err != nil {
 		log.Printf("Unable to marshal health status to json: %v", err)
 		return
@@ -151,6 +180,7 @@ func (r *Raft) RegisterHandler() {
 
 	mux.HandleFunc("/health", r.serveHealth)
 	mux.HandleFunc("/askVote", r.sendRequestVote)
+	mux.HandleFunc("/heartbeatPluslog", r.serveHeartbeatPluslog)
 
 	r.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", r.config.Server.Port),
@@ -171,7 +201,6 @@ func (r *Raft) StartServer() {
 	log.Println("Starting the http server...")
 	log.Printf("Starting HTTP server at addr: %v", r.config.Server.Port)
 
-	r.status = http.StatusOK
 	if err := r.server.ListenAndServe(); err != nil {
 		if err != http.ErrServerClosed {
 			r.status = http.StatusInternalServerError
@@ -190,12 +219,13 @@ func RunRaft(ctx context.Context, cfg *server.ServerConfig) error {
 	raft := getRaftServer(cfg)
 
 	go raft.StartServer()
+	defer raft.server.Close()
 
 	// let the server started..
 	time.Sleep(5 * time.Second)
 	log.Println("Server is started...")
+	raft.status = http.StatusOK
 
-	raft.StartElection(stopCh)
-	<-stopCh
+	raft.StartElectionLoop(ctx, stopCh)
 	return nil
 }

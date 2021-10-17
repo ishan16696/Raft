@@ -59,7 +59,7 @@ func GetServerConfig() (*server.ServerConfig, error) {
 
 	flag.IntVar(&opts.ServerPort, "port", DefaultServerPort, "specify the portNo. of node")
 	flag.IntVar(&opts.TotalNodes, "nodes", DefaultTotalNodes, "total no. of nodes")
-	flag.StringVar(&peers, "peers", "9091,9092", "specify the portNo. of all peer nodes")
+	flag.StringVar(&peers, "peers", "9091,9092", "specify the portNo. of rest of all peer nodes")
 	flag.Parse()
 
 	if err := setPeerPorts(opts, peers); err != nil {
@@ -78,6 +78,7 @@ func ExecuteServer(ctx context.Context) error {
 		return err
 	}
 
+	// validation
 	if err := validateServerConfig(cfg); err != nil {
 		return err
 	}

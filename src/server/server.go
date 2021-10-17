@@ -9,53 +9,19 @@ import (
 	"time"
 )
 
-type state string
-
-const (
-	Follower    state = "Follower"
-	Candidate   state = "Candidate"
-	Leader      state = "Leader"
-	UnknownSate state = "Unknown"
-
-	defaultServerIP = "127.0.0.1"
-	NotVotedYet     = "NotVoted"
-)
-
-// ServerConfig defines the field in server which are configurable by user.
-type ServerConfig struct {
-	ServerPort int   `json:"serverPort"`
-	TotalNodes int   `json:"totalNodes"`
-	PeerPorts  []int `json:"peerPort"`
-}
-
-type server struct {
-	ServerID     string
-	CurrentState state
-	VotedFor     string
-	Term         int
-	Nodes        int
-	EndPoint     string
-	Port         int
-	Peers        []int
-}
-
-type Raft struct {
-	Server *server
-	mutex  sync.Locker
-}
-
 type Server interface {
+	Print()
 	GetServerID() string
-	LeaderID() string
-
-	Term() uint64
-	CommitIndex() uint64
-	LastVotedFor() string
-	MemberCount() int
+	PeerCount() int
 	Quorum() int
+	ServerEndPoint() string
+	GetState() string
+	GetTerm() int
+	GetLastVotedFor() string
+
+	CommitIndex() uint64
 	IsLogEmpty() bool
 	LastCommandName() string
-	GetState() string
 	ElectionTimeout() time.Duration
 	SetElectionTimeout(duration time.Duration)
 	HeartbeatInterval() time.Duration
@@ -64,31 +30,60 @@ type Server interface {
 	Start() error
 	Stop()
 	Running() bool
-	Print()
 }
 
 func (s *server) Print() {
 	log.Printf("%+v", s.ServerID)
 }
 
-func (s *server) GetState() state {
-	return s.CurrentState
-}
-
 func (s *server) GetServerID() string {
 	return s.ServerID
-}
-
-func (s *server) LastVotedFor() string {
-	return s.VotedFor
 }
 
 func (s *server) Quorum() int {
 	return s.Nodes/2 + 1
 }
 
-// getID takes the port no. and returns the hash of it as string.
-func getID(port int) string {
+func (s *server) PeerCount() int {
+	return s.Nodes - 1
+}
+
+func (s *server) ServerEndPoint() string {
+	return s.EndPoint
+}
+
+func (s *server) GetState() state {
+	return s.CurrentState
+}
+
+func (s *server) SetState(changedState state) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.CurrentState = changedState
+}
+
+func (s *server) GetLastVotedFor() string {
+	return s.VotedFor
+}
+
+func (s *server) SetLastVotedFor(id string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.VotedFor = id
+}
+
+func (s *server) GetTerm() int {
+	return s.Term
+}
+
+func (s *server) SetTerm(newTerm int) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.Term = newTerm
+}
+
+// generateID takes the port no. and returns the hash of it as string.
+func generateID(port int) string {
 	portInByte := new([]byte)
 	hash := sha256.New()
 	hash.Write(append(*portInByte, byte(port)))
@@ -106,14 +101,16 @@ func NewServer(cfg *ServerConfig) *server {
 		Port:         cfg.ServerPort,
 		Nodes:        cfg.TotalNodes,
 		EndPoint:     getEndPoint(cfg.ServerPort),
-		ServerID:     getID(cfg.ServerPort),
+		ServerID:     generateID(cfg.ServerPort),
 		CurrentState: Follower,
 		Term:         0,
 		VotedFor:     NotVotedYet,
 		Peers:        cfg.PeerPorts,
+		mutex:        &sync.Mutex{},
 	}
 }
 
+// NewRaft returns the new raft
 func NewRaft(cfg *ServerConfig) *Raft {
 	return &Raft{
 		Server: NewServer(cfg),
