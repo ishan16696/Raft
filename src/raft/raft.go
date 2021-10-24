@@ -172,7 +172,7 @@ func RunRaft(ctx context.Context, cfg *server.ServerConfig) error {
 	defer raft.Stop()
 
 	// let the server started...
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Second)
 	raft.logger.Info("Server is started...")
 	raft.status = http.StatusOK
 
