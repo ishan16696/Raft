@@ -18,7 +18,7 @@ func getURL(ip string, port int, endpoint string) string {
 }
 
 func (r *Raft) StartElectionLoop(ctx context.Context, stopch chan struct{}) {
-	// start the timer
+	// start the election timer
 	r.StartElectionTimer()
 	log := logrus.New().WithField("actor", "leader-elector")
 

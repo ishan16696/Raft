@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
@@ -50,7 +49,7 @@ func (r *Raft) sendRequestVoteReply(rw http.ResponseWriter, req *http.Request) {
 
 	reqBody, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		log.Fatal(err)
+		r.logger.Fatal(err)
 	}
 
 	if err := json.Unmarshal(reqBody, &reqComing); err != nil {
@@ -69,6 +68,7 @@ func (r *Raft) sendRequestVoteReply(rw http.ResponseWriter, req *http.Request) {
 			if r.config.Server.Term < reqComing.Term {
 				r.config.Server.SetTerm(reqComing.Term)
 				r.config.Server.SetState(server.Follower)
+				r.config.Server.SetLastVotedFor(reqComing.CandidateId)
 				return true
 			}
 			return false
@@ -94,7 +94,7 @@ func (r *Raft) serveHeartbeatPluslog(rw http.ResponseWriter, req *http.Request) 
 
 	reqBody, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		log.Fatal(err)
+		r.logger.Fatal(err)
 	}
 
 	if err := json.Unmarshal(reqBody, &reqComing); err != nil {
@@ -102,18 +102,18 @@ func (r *Raft) serveHeartbeatPluslog(rw http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	r.ResetElectionTimer()
 	heartbeatReply := &HeartbeatReply{
-		IsResetTimer: true,
+		IsResetTimer: r.ResetElectionTimer(),
 		AckForLog:    false,
 	}
 
 	if reqComing.ContainLogs {
-		r.logger.Errorf("take action like write ahead logs")
+		r.logger.Info("take action like write ahead logs")
 	}
 
 	if r.config.Server.GetTerm() < reqComing.Term {
 		r.config.Server.SetTerm(reqComing.Term)
+		r.config.Server.SetLastVotedFor(reqComing.LeaderID)
 	}
 
 	json, err := json.Marshal(heartbeatReply)
@@ -154,11 +154,11 @@ func (r *Raft) StartServer() {
 	if err := r.server.ListenAndServe(); err != nil {
 		if err != http.ErrServerClosed {
 			r.status = http.StatusInternalServerError
-			log.Fatalf("Failed to start http server: %v", err)
+			r.logger.Fatalf("Failed to start http server: %v", err)
 			return
 		}
 		r.status = int(http.StateClosed)
-		log.Println("HTTP server closed gracefully.")
+		r.logger.Info("HTTP server closed gracefully.")
 	}
 }
 

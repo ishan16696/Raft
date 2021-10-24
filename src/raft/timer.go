@@ -9,8 +9,8 @@ func (r *Raft) StartElectionTimer() {
 	r.electionTimer = time.NewTimer(time.Duration(rand.Intn(maximumInterval-minimumInterval)+minimumInterval) * time.Second)
 }
 
-func (r *Raft) ResetElectionTimer() {
-	r.electionTimer.Reset(time.Duration(rand.Intn(maximumInterval-minimumInterval)+minimumInterval) * time.Second)
+func (r *Raft) ResetElectionTimer() bool {
+	return r.electionTimer.Reset(time.Duration(rand.Intn(maximumInterval-minimumInterval)+minimumInterval) * time.Second)
 }
 
 func (r *Raft) StopElectionTimer() {
@@ -25,6 +25,6 @@ func (r *Raft) StopHeartBeatTimer() {
 	r.heartbeatTimer.Stop()
 }
 
-func (r *Raft) ResetHeartBeatTimer() {
-	r.electionTimer.Reset(DefaultHeartbeatInterval)
+func (r *Raft) ResetHeartBeatTimer() bool {
+	return r.electionTimer.Reset(DefaultHeartbeatInterval)
 }
