@@ -4,6 +4,8 @@ import (
 	"Raft/src/server"
 	"net/http"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -28,6 +30,7 @@ type Raft struct {
 	server         *http.Server
 	electionTimer  *time.Timer
 	heartbeatTimer *time.Timer
+	logger         *logrus.Entry
 }
 
 type RequestVoteReply struct {

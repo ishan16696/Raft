@@ -33,7 +33,7 @@ type Server interface {
 }
 
 func (s *server) Print() {
-	log.Printf("%+v", s.ServerID)
+	log.Printf("%+v", s)
 }
 
 func (s *server) GetServerID() string {
@@ -95,6 +95,14 @@ func getEndPoint(port int) string {
 	return fmt.Sprintf("http://%s:%d", defaultServerIP, port)
 }
 
+// GetServerConfig returns the ServerConfig with default values.
+func GetServerConfig() *ServerConfig {
+	return &ServerConfig{
+		TotalNodes: DefaultTotalNodes,
+		ServerPort: DefaultServerPort,
+	}
+}
+
 // NewServer returns the new server
 func NewServer(cfg *ServerConfig) *server {
 	return &server{
@@ -113,6 +121,7 @@ func NewServer(cfg *ServerConfig) *server {
 // NewRaft returns the new raft
 func NewRaft(cfg *ServerConfig) *Raft {
 	return &Raft{
-		Server: NewServer(cfg),
+		Server:   NewServer(cfg),
+		LeaderID: NoLeader,
 	}
 }

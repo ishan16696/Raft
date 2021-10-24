@@ -3,10 +3,11 @@ package main
 import (
 	"Raft/src/cmd"
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"runtime"
+
+	"github.com/sirupsen/logrus"
 )
 
 var onlyOneSignalHandler = make(chan struct{})
@@ -17,8 +18,8 @@ func main() {
 	}
 
 	ctx := setupSignalHandler()
-	if err := cmd.ExecuteServer(ctx); err != nil {
-		fmt.Println(err)
+	if err := cmd.StartServer(ctx); err != nil {
+		logrus.Error(err)
 		os.Exit(1)
 	}
 

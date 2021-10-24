@@ -6,15 +6,19 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
-const (
-	DefaultServerPort int = 9090
-	DefaultTotalNodes int = 3
+var (
+	log *logrus.Entry
 )
+
+func init() {
+	log = logrus.New().WithField("actor", "cmd-config")
+}
 
 func setPeerPorts(cfg *server.ServerConfig, peers string) error {
 	peerPorts := strings.Split(peers, ",")
@@ -55,10 +59,10 @@ func validateServerConfig(cfg *server.ServerConfig) error {
 //  GetServerConfig returns the server configurations.
 func GetServerConfig() (*server.ServerConfig, error) {
 	var peers string
-	opts := new(server.ServerConfig)
+	opts := server.GetServerConfig()
 
-	flag.IntVar(&opts.ServerPort, "port", DefaultServerPort, "specify the portNo. of node")
-	flag.IntVar(&opts.TotalNodes, "nodes", DefaultTotalNodes, "total no. of nodes")
+	flag.IntVar(&opts.ServerPort, "port", opts.ServerPort, "specify the portNo. of node")
+	flag.IntVar(&opts.TotalNodes, "nodes", opts.TotalNodes, "total no. of nodes")
 	flag.StringVar(&peers, "peers", "9091,9092", "specify the portNo. of rest of all peer nodes")
 	flag.Parse()
 
@@ -66,12 +70,12 @@ func GetServerConfig() (*server.ServerConfig, error) {
 		return opts, err
 	}
 
-	log.Printf("Server Configuration: %+v", *opts)
+	log.Infof("Server Configuration: %+v", *opts)
 	return opts, nil
 }
 
-// ExecuteServer the starts the server with given configurations.
-func ExecuteServer(ctx context.Context) error {
+// StartServer the starts the server with given configurations.
+func StartServer(ctx context.Context) error {
 	// get the server configurations
 	cfg, err := GetServerConfig()
 	if err != nil {

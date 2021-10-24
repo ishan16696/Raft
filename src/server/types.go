@@ -13,8 +13,13 @@ const (
 	Leader      state = "Leader"
 	UnknownSate state = "Unknown"
 
+	NoLeader = "0"
+
 	defaultServerIP = "127.0.0.1"
 	NotVotedYet     = "NotVoted"
+
+	DefaultServerPort int = 9090
+	DefaultTotalNodes int = 3
 )
 
 var NotLeaderError = errors.New("Leader is already elected...")
@@ -27,6 +32,7 @@ type ServerConfig struct {
 	PeerPorts  []int `json:"peerPort"`
 }
 
+// server holds the all information for server.
 type server struct {
 	ServerID     string
 	CurrentState state
