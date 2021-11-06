@@ -41,10 +41,10 @@ Summary of RAFT algorithm:
 3. Leader will forward the client requests to the followers as AppendEntries message.
 4. All follower should acknowledge, if leader receives the majority of follower's acknowledgment then only it will commit this change.
 
-* 1.**Leader Election:**
+* **Leader Election:**
     * Select one of the node as the cluster Leader. It is achieved by Leader Election.
     * Only Elected Leader node can respond to the client. All other node have to sync-up with Leader.
-* 2.**Log Replication:**
+* **Log Replication:**
     * All the changes have to gone through the Leader.
     * Leader replicates its log to all other followers nodes.
 
