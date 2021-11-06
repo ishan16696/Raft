@@ -35,6 +35,8 @@ Summary of RAFT algorithm:
 4. To maintain its authority, an elected **Leader** must continuously send a Heartbeat message to the other nodes in the cluster.
 5. If a **follower** does not receive the heartbeat packet during a given time, the leader is considered to have crashed,  **follower** changes its status to **candidate** and starts a leader election.
 
+![stateDiagram](stateDiagram.png)
+
 **Log Replication:**
 1. Leader is responsible for the log replication.
 2. Client send the request to create/update the data, leader receives the request.
