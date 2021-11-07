@@ -76,6 +76,7 @@ func (r *Raft) sendRequestVoteReply(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if reqVoteReply.VoteGranted {
+		r.logger.Infof("sending vote to candidate: [%v] in Term: %v", r.config.Server.GetLastVotedFor(), r.config.Server.GetTerm())
 		r.ResetElectionTimer()
 	}
 	json, err := json.Marshal(reqVoteReply)
@@ -107,8 +108,10 @@ func (r *Raft) serveHeartbeatPluslog(rw http.ResponseWriter, req *http.Request) 
 		AckForLog:    false,
 	}
 
+	r.logger.Info("Received heartbeat...")
+
 	if reqComing.ContainLogs {
-		r.logger.Info("take action like write ahead logs")
+		r.logger.Info("taking action like write ahead logs")
 	}
 
 	if r.config.Server.GetTerm() < reqComing.Term {

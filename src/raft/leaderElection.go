@@ -109,7 +109,8 @@ func (r *Raft) TriggerElection() error {
 		}
 		if voteReceived >= r.config.Server.Quorum() {
 			r.config.Server.SetState(server.Leader)
-			r.logger.Info("node becomes the Leader")
+			r.logger.Info("Received majority of vote")
+			r.logger.Infof("Node with ID: [%v] becomes the Leader of Term: %v", r.config.Server.GetServerID(), r.config.Server.GetTerm())
 			return nil
 		}
 	}
@@ -208,6 +209,6 @@ func (r *Raft) SendHeartBeat(serverURL string) error {
 		return err
 	}
 
-	r.logger.Infof("HeartbeatReply: %+v\n", reply)
+	r.logger.Infof("Heartbeat acknowledgement received...")
 	return nil
 }
